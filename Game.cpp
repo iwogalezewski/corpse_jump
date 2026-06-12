@@ -8,6 +8,7 @@
 #include <ctime>
 #include <string>
 #include <algorithm>
+#include <cmath>
 Game::Game() : window(sf::VideoMode(1378, 784), "Corpse Jump"), currentState(GameState::MENU) {
     window.setFramerateLimit(60);
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
@@ -159,7 +160,12 @@ void Game::processEvents() {
                     if (length != 0) {
 
                         sf::Vector2f dir(dx / length, dy / length);
-                        gameObjects.push_back(std::make_unique<Bullet>(playerCenter.x, playerCenter.y, dir));
+                        int dmg = 1;
+                        if (playerPtr->hasSpecialAmmo()){
+                            dmg = 2;
+                            playerPtr->useSpecialAmmo();
+                        }
+                        gameObjects.push_back(std::make_unique<Bullet>(playerPtr->getCenter().x, playerPtr->getCenter().y, dir, dmg));
                     }
                 }
             }
@@ -173,7 +179,8 @@ void Game::processEvents() {
 void Game::update(float deltaTime) {
     if (currentState == GameState::MENU) {
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-        sf::Vector2f mousePosF(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y));
+        sf::Vector2f mousePosF = window.mapPixelToCoords(mousePos);
+
 
         // Podœwietlanie przycisków
         playButton.setFillColor(playButton.getGlobalBounds().contains(mousePosF) ? sf::Color(150, 150, 150) : sf::Color(100, 100, 100));
@@ -262,6 +269,14 @@ void Game::update(float deltaTime) {
         }
 
         // Pocisk i Zombie
+        Player* playerPtr = nullptr;
+        for (auto& obj : gameObjects) {
+            if (auto p = dynamic_cast<Player*>(obj.get())) {
+                playerPtr = p;
+                break;
+            }
+        }
+
         for (auto& obj1 : gameObjects) {
             if (auto bullet = dynamic_cast<Bullet*>(obj1.get())) {
                 if (bullet->isMarkedForDeletion()) continue;
@@ -270,7 +285,14 @@ void Game::update(float deltaTime) {
                     if (auto zombie = dynamic_cast<Zombie*>(obj2.get())) {
                         if (zombie->isMarkedForDeletion()) continue;
                         if (bullet->getBounds().intersects(zombie->getBounds())) {
-                            zombie->takeDamage(1);     
+                            zombie->takeDamage(bullet->getDamage());
+                            if(zombie->isMarkedForDeletion()){
+                                zombieKills++;
+                                if(zombieKills % 10 == 0){
+                                    playerPtr->addSpecialAmmo(5);
+                                }
+                            }
+
                             bullet->markForDeletion(); 
                             break; 
                         }

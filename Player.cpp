@@ -1,9 +1,20 @@
 #include "Player.h"
+#include <iostream>
 #include <cmath> 
 
 Player::Player(float startX, float startY)
     : GameObject(startX, startY), movementSpeed(300.f), jumpForce(950.f), gravity(1500.f), isGrounded(false) {
-    shape.setFillColor(sf::Color::Green);
+    if (!playerTexture.loadFromFile("player.png")) {
+        std::cerr << "Blad: Nie mozna wczytac player.png!" << std::endl;
+    }
+    shape.setTexture(&playerTexture);
+    shape.setFillColor(sf::Color::White);
+    shape.setSize(sf::Vector2f(50.f, 50.f));
+
+    int imgWidth = playerTexture.getSize().x;
+    int imgHeight = playerTexture.getSize().y;
+    textureRect = sf::IntRect(0, 0, imgWidth, imgHeight);
+    shape.setTextureRect(textureRect);
 
     gun.setSize(sf::Vector2f(40.f, 8.f));
     gun.setFillColor(sf::Color::Red);
@@ -29,9 +40,29 @@ void Player::update(float deltaTime) {
     else if (position.x > 1378.f - 50.f) position.x = 1378.f - 50.f;
 
     position.y += velocity.y * deltaTime;
-    shape.setPosition(position);
 
     gun.setPosition(getCenter());
+
+    if (velocity.x > 0.f) {
+        isFacingRight = true;
+    } else if (velocity.x < 0.f) {
+        isFacingRight = false;
+    }
+
+    int imgWidth = playerTexture.getSize().x;
+    int imgHeight = playerTexture.getSize().y;
+
+    if (isFacingRight) {
+        textureRect.left = 0;
+        textureRect.width = imgWidth;
+    } else {
+        textureRect.left = imgWidth;
+        textureRect.width = -imgWidth;
+    }
+
+    shape.setTextureRect(textureRect);
+
+    shape.setPosition(position);
 }
 
 void Player::draw(sf::RenderWindow& window) {

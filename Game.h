@@ -45,6 +45,7 @@ private:
 
     float spawnTimer = 0.f;
     float nextSpawnTime = 3.0f;
+    int zombieKills = 0;
 
     void processEvents();
     void update(float deltaTime);

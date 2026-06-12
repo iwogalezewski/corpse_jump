@@ -1,11 +1,22 @@
 #include "Zombie.h"
-#include <cmath> 
-
+#include <cmath>
+#include <iostream>
 Zombie::Zombie(float startX, float startY)
     : GameObject(startX, startY), movementSpeed(100.f), hp(3), gravity(1500.f), isGrounded(false) {
 
     shape.setSize(sf::Vector2f(50.f, 50.f));
-    shape.setFillColor(sf::Color::Magenta);
+    static sf::Texture texture;
+    static bool isLoaded = false;
+
+    if (!isLoaded) {
+        if (!texture.loadFromFile("zombie.png")) {
+            std::cerr << "Blad: Nie mozna wczytac zombie.png!" << std::endl;
+        }
+        isLoaded = true;
+    }
+
+    shape.setTexture(&texture);
+    shape.setFillColor(sf::Color::White);
 }
 
 void Zombie::update(float deltaTime) {
@@ -14,6 +25,20 @@ void Zombie::update(float deltaTime) {
 
     position.x += velocity.x * deltaTime;
     position.y += velocity.y * deltaTime;
+
+    const sf::Texture* currentTexture = shape.getTexture();
+
+    if (currentTexture != nullptr) {
+        int imgWidth = currentTexture->getSize().x;
+        int imgHeight = currentTexture->getSize().y;
+
+        if (velocity.x > 0.f) {
+            shape.setTextureRect(sf::IntRect(0, 0, imgWidth, imgHeight));
+        }
+        else if (velocity.x < 0.f) {
+            shape.setTextureRect(sf::IntRect(imgWidth, 0, -imgWidth, imgHeight));
+        }
+    }
 
     shape.setPosition(position);
 }

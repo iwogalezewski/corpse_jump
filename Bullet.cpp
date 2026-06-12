@@ -1,7 +1,7 @@
 #include "Bullet.h"
 
-Bullet::Bullet(float startX, float startY, sf::Vector2f dir)
-    : GameObject(startX, startY), direction(dir), speed(800.f) {
+Bullet::Bullet(float startX, float startY, sf::Vector2f dir, int dmg)
+    : GameObject(startX, startY), direction(dir), speed(800.f), damage(dmg) {
     // Ma³y ¿ó³ty kwadracik jako pocisk
     shape.setSize(sf::Vector2f(10.f, 10.f));
     shape.setFillColor(sf::Color::Yellow);
