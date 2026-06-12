@@ -1,18 +1,17 @@
 #include "Zombie.h"
-#include <cmath> // Do std::abs
+#include <cmath> 
 
 Zombie::Zombie(float startX, float startY)
     : GameObject(startX, startY), movementSpeed(100.f), hp(3), gravity(1500.f), isGrounded(false) {
-    // Zombiak bêdzie fioletowy i trochê wiêkszy, by ³atwiej by³o w niego trafiæ
+
     shape.setSize(sf::Vector2f(50.f, 50.f));
     shape.setFillColor(sf::Color::Magenta);
 }
 
 void Zombie::update(float deltaTime) {
-    // Aplikowanie grawitacji
+
     velocity.y += gravity * deltaTime;
 
-    // Aktualizacja pozycji
     position.x += velocity.x * deltaTime;
     position.y += velocity.y * deltaTime;
 
@@ -20,27 +19,26 @@ void Zombie::update(float deltaTime) {
 }
 
 void Zombie::moveTowards(float targetX) {
-    // Obliczamy œrodek zombiaka
+
     float centerX = position.x + shape.getSize().x / 2.0f;
 
-    // Zombiak ma ma³¹ "martw¹ strefê" (5 pikseli), ¿eby nie drga³ w miejscu, gdy dojdzie do gracza
     if (std::abs(targetX - centerX) > 5.f) {
         if (centerX < targetX) {
-            velocity.x = movementSpeed; // IdŸ w prawo
+            velocity.x = movementSpeed;
         }
         else {
-            velocity.x = -movementSpeed; // IdŸ w lewo
+            velocity.x = -movementSpeed; 
         }
     }
     else {
-        velocity.x = 0.f; // Stój, jesteœ przy celu
+        velocity.x = 0.f; 
     }
 }
 
 void Zombie::takeDamage(int damage) {
     hp -= damage;
     if (hp <= 0) {
-        markForDeletion(); // Jeœli HP spadnie do 0, oznacz do usuniêcia z pamiêci
+        markForDeletion(); 
     }
 }
 

@@ -8,17 +8,16 @@ private:
     float gravity;
     bool isGrounded;
 
-    sf::RectangleShape gun; // Lufa pistoletu
+    sf::RectangleShape gun;
 
 public:
     Player(float startX, float startY);
 
     void update(float deltaTime) override;
-    void draw(sf::RenderWindow& window) override; // Nadpisujemy draw, ¿eby narysowaæ te¿ broñ
-
+    void draw(sf::RenderWindow& window) override; 
     void setGrounded(bool state);
     void resolveCollision(const sf::FloatRect& platformBounds);
 
-    void aim(sf::Vector2f mousePos); // Celowanie
-    sf::Vector2f getCenter() const;  // Pobranie œrodka gracza
+    void aim(sf::Vector2f mousePos); 
+    sf::Vector2f getCenter() const; 
 };

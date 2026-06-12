@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <fstream> 
 #include "GameObject.h"
 
 enum class GameState {
@@ -16,15 +17,12 @@ private:
     sf::RenderWindow window;
     GameState currentState;
 
-    // Przechowywanie wszystkich obiektów w jednym kontenerze
     std::vector<std::unique_ptr<GameObject>> gameObjects;
 
-    // Zasoby
     sf::Font font;
     sf::Texture menuTexture;
     sf::Sprite background;
 
-    // Elementy UI
     sf::RectangleShape playButton;
     sf::RectangleShape authorsButton;
     sf::RectangleShape exitButton;
@@ -34,6 +32,19 @@ private:
     sf::Text exitText;
     sf::Text gameText;
     sf::Text authorsInfo;
+
+    sf::Text timerText;
+    sf::Text bestScoreText;
+    float currentSurvivalTime = 0.f;
+    float bestSurvivalTime = 0.f;
+
+
+    void loadBestScore();
+    void saveBestScore();
+    void checkAndSaveScore();
+
+    float spawnTimer = 0.f;
+    float nextSpawnTime = 3.0f;
 
     void processEvents();
     void update(float deltaTime);

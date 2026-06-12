@@ -7,7 +7,7 @@ protected:
     sf::Vector2f velocity;
     sf::RectangleShape shape;
 
-    bool dead = false; // Nowa flaga informuj¹ca, czy obiekt do usuniêcia
+    bool dead = false; 
 
 public:
     GameObject(float startX, float startY);
@@ -17,7 +17,6 @@ public:
     virtual void draw(sf::RenderWindow& window);
     sf::FloatRect getBounds() const;
 
-    // Metody do zarz¹dzania ¿yciem obiektu
     bool isMarkedForDeletion() const { return dead; }
     virtual void markForDeletion() { dead = true; }
 };
