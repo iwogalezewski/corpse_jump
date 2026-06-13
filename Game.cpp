@@ -305,13 +305,13 @@ void Game::update(float deltaTime) {
             }
         }
 
-        for (auto& obj : gameObjects) {
-            if (auto player = dynamic_cast<Player*>(obj.get())) {
-                player->aim(mousePosF);
-            }
-            else if (auto zombie = dynamic_cast<Zombie*>(obj.get())) {
-                if (playerPtr) {
-                    zombie->moveTowards(playerPtr->getCenter());
+        // Kolizje walki (Zombie gryzie gracza)
+        if (playerPtr) {
+            for (auto& obj : gameObjects) {
+                if (auto zombie = dynamic_cast<Zombie*>(obj.get())) {
+                    if (!zombie->isMarkedForDeletion() && playerPtr->getBounds().intersects(zombie->getBounds())) {
+                        playerPtr->takeDamage(zombie->getDamage());
+                    }
                 }
             }
         }
@@ -357,7 +357,6 @@ void Game::update(float deltaTime) {
         );
     }
 }
-
 void Game::render() {
     window.clear(sf::Color(40, 45, 50));
     window.draw(background);
