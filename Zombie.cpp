@@ -43,20 +43,14 @@ void Zombie::update(float deltaTime) {
     shape.setPosition(position);
 }
 
-void Zombie::moveTowards(float targetX) {
+void Zombie::moveTowards(sf::Vector2f playerPos) {
+    targetPos = playerPos; 
 
-    float centerX = position.x + shape.getSize().x / 2.0f;
-
-    if (std::abs(targetX - centerX) > 5.f) {
-        if (centerX < targetX) {
-            velocity.x = movementSpeed;
-        }
-        else {
-            velocity.x = -movementSpeed; 
-        }
+    if (playerPos.x > position.x) {
+        velocity.x = movementSpeed;
     }
     else {
-        velocity.x = 0.f; 
+        velocity.x = -movementSpeed;
     }
 }
 

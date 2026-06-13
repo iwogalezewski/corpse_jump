@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -9,7 +10,8 @@
 enum class GameState {
     MENU,
     PLAY,
-    AUTHORS
+    AUTHORS,
+    GAMEOVER
 };
 
 class Game {
@@ -35,9 +37,15 @@ private:
 
     sf::Text timerText;
     sf::Text bestScoreText;
+    sf::Text hpText;
+    sf::Text gameOverText;
+    sf::Text restartText;
+
+    sf::SoundBuffer deadSoundBuffer;
+    sf::Sound deadSound;
+
     float currentSurvivalTime = 0.f;
     float bestSurvivalTime = 0.f;
-
 
     void loadBestScore();
     void saveBestScore();

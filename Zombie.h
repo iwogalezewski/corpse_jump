@@ -7,6 +7,7 @@ protected:
     int hp;
     float gravity;
     bool isGrounded;
+    sf::Vector2f targetPos; 
 
 public:
     Zombie(float startX, float startY);
@@ -15,5 +16,8 @@ public:
     void setGrounded(bool state);
     void resolveCollision(const sf::FloatRect& platformBounds);
     void takeDamage(int damage);
-    void moveTowards(float targetX);
+
+    virtual void moveTowards(sf::Vector2f playerPos);
+
+    virtual int getDamage() const { return 1; }
 };

@@ -9,6 +9,7 @@
 #include <string>
 #include <algorithm>
 #include <cmath>
+
 Game::Game() : window(sf::VideoMode(1378, 784), "Corpse Jump"), currentState(GameState::MENU) {
     window.setFramerateLimit(60);
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
@@ -17,11 +18,13 @@ Game::Game() : window(sf::VideoMode(1378, 784), "Corpse Jump"), currentState(Gam
     if (!menuTexture.loadFromFile("authors.png")) std::cerr << "Blad wczytywania grafiki!" << std::endl;
     background.setTexture(menuTexture);
 
-    // Wczytanie najlepszego wyniku 
+    if (deadSoundBuffer.loadFromFile("deadsound.wav")) {
+        deadSound.setBuffer(deadSoundBuffer);
+    }
+
     loadBestScore();
     initUI();
 
-    //MAPA
     gameObjects.push_back(std::make_unique<Platform>(-500.f, 700.f, 2500.f, 100.f));
     gameObjects.push_back(std::make_unique<Platform>(200.f, 500.f, 250.f, 30.f));
     gameObjects.push_back(std::make_unique<Platform>(800.f, 400.f, 250.f, 30.f));
@@ -31,7 +34,6 @@ Game::Game() : window(sf::VideoMode(1378, 784), "Corpse Jump"), currentState(Gam
 }
 
 void Game::initUI() {
-    //BEST SCORE 
     bestScoreText.setFont(font);
     bestScoreText.setString("Najlepszy czas: " + std::to_string(static_cast<int>(bestSurvivalTime)) + "s");
     bestScoreText.setCharacterSize(40);
@@ -41,13 +43,33 @@ void Game::initUI() {
     bestScoreText.setOrigin(bsRect.left + bsRect.width / 2.0f, bsRect.top + bsRect.height / 2.0f);
     bestScoreText.setPosition(1378.f / 2.0f, 650.f);
 
-    //AKTUALNY CZAS
     timerText.setFont(font);
     timerText.setString("0s");
     timerText.setCharacterSize(50);
     timerText.setFillColor(sf::Color::White);
 
-    //PLAY 
+    hpText.setFont(font);
+    hpText.setString("HP: 10");
+    hpText.setCharacterSize(30);
+    hpText.setFillColor(sf::Color(255, 100, 100));
+    hpText.setPosition(20.f, 60.f);
+
+    gameOverText.setFont(font);
+    gameOverText.setString("GAME OVER");
+    gameOverText.setCharacterSize(100);
+    gameOverText.setFillColor(sf::Color::Red);
+    sf::FloatRect goRect = gameOverText.getLocalBounds();
+    gameOverText.setOrigin(goRect.left + goRect.width / 2.0f, goRect.top + goRect.height / 2.0f);
+    gameOverText.setPosition(1378.f / 2.0f, 784.f / 2.0f - 50.f);
+
+    restartText.setFont(font);
+    restartText.setString("Wcisnij ESC, aby wrocic do Menu");
+    restartText.setCharacterSize(30);
+    restartText.setFillColor(sf::Color::White);
+    sf::FloatRect rRect = restartText.getLocalBounds();
+    restartText.setOrigin(rRect.left + rRect.width / 2.0f, rRect.top + rRect.height / 2.0f);
+    restartText.setPosition(1378.f / 2.0f, 784.f / 2.0f + 50.f);
+
     playButton.setSize(sf::Vector2f(290.f, 80.f));
     playButton.setPosition(545.f, 330.f);
     playButton.setFillColor(sf::Color(100, 100, 100));
@@ -62,7 +84,6 @@ void Game::initUI() {
     playText.setPosition(playButton.getPosition().x + playButton.getSize().x / 2.0f,
         playButton.getPosition().y + playButton.getSize().y / 2.0f);
 
-    //(AUTORZY
     authorsButton.setSize(sf::Vector2f(290.f, 80.f));
     authorsButton.setPosition(545.f, 430.f);
     authorsButton.setFillColor(sf::Color(100, 100, 100));
@@ -77,7 +98,6 @@ void Game::initUI() {
     authorsText.setPosition(authorsButton.getPosition().x + authorsButton.getSize().x / 2.0f,
         authorsButton.getPosition().y + authorsButton.getSize().y / 2.0f);
 
-    //EXIT
     exitButton.setSize(sf::Vector2f(290.f, 80.f));
     exitButton.setPosition(545.f, 530.f);
     exitButton.setFillColor(sf::Color(100, 100, 100));
@@ -102,7 +122,6 @@ void Game::initUI() {
     authorsInfo.setCharacterSize(40);
     authorsInfo.setPosition(450.f, 400.f);
 }
-
 void Game::run() {
     sf::Clock clock;
     while (window.isOpen()) {
@@ -117,30 +136,34 @@ void Game::run() {
 void Game::processEvents() {
     sf::Event event;
     while (window.pollEvent(event)) {
-        if (event.type == sf::Event::Closed) {
-            window.close();
-        }
+        if (event.type == sf::Event::Closed) window.close();
 
         if (currentState == GameState::MENU) {
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-                sf::Vector2f mousePosF(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y));
+                sf::Vector2f mousePosF = window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y));
 
                 if (playButton.getGlobalBounds().contains(mousePosF)) {
                     currentState = GameState::PLAY;
-                    currentSurvivalTime = 0.f; // Reset licznika
+                    currentSurvivalTime = 0.f;
+                    zombieKills = 0;
+
+                    gameObjects.clear();
+                    gameObjects.push_back(std::make_unique<Platform>(-500.f, 700.f, 2500.f, 100.f));
+                    gameObjects.push_back(std::make_unique<Platform>(200.f, 500.f, 250.f, 30.f));
+                    gameObjects.push_back(std::make_unique<Platform>(800.f, 400.f, 250.f, 30.f));
+                    gameObjects.push_back(std::make_unique<Platform>(450.f, 250.f, 200.f, 30.f));
+                    gameObjects.push_back(std::make_unique<Player>(100.f, 600.f));
                 }
                 if (authorsButton.getGlobalBounds().contains(mousePosF)) currentState = GameState::AUTHORS;
                 if (exitButton.getGlobalBounds().contains(mousePosF)) window.close();
             }
-     
         }
         else if (currentState == GameState::PLAY) {
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-                checkAndSaveScore(); // Sprawdzenie i zapis 
+                checkAndSaveScore();
+                currentState = GameState::MENU;
             }
-           
 
-            //STRZELANIA
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f mousePosF = window.mapPixelToCoords(sf::Vector2i(event.mouseButton.x, event.mouseButton.y));
                 Player* playerPtr = nullptr;
@@ -158,16 +181,20 @@ void Game::processEvents() {
                     float length = std::sqrt(dx * dx + dy * dy);
 
                     if (length != 0) {
-
                         sf::Vector2f dir(dx / length, dy / length);
                         int dmg = 1;
-                        if (playerPtr->hasSpecialAmmo()){
+                        if (playerPtr->hasSpecialAmmo()) {
                             dmg = 2;
                             playerPtr->useSpecialAmmo();
                         }
                         gameObjects.push_back(std::make_unique<Bullet>(playerPtr->getCenter().x, playerPtr->getCenter().y, dir, dmg));
                     }
                 }
+            }
+        }
+        else if (currentState == GameState::GAMEOVER) {
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+                currentState = GameState::MENU;
             }
         }
         else if (currentState == GameState::AUTHORS) {
@@ -181,32 +208,24 @@ void Game::update(float deltaTime) {
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
         sf::Vector2f mousePosF = window.mapPixelToCoords(mousePos);
 
-
-        // Podœwietlanie przycisków
         playButton.setFillColor(playButton.getGlobalBounds().contains(mousePosF) ? sf::Color(150, 150, 150) : sf::Color(100, 100, 100));
         authorsButton.setFillColor(authorsButton.getGlobalBounds().contains(mousePosF) ? sf::Color(150, 150, 150) : sf::Color(100, 100, 100));
         exitButton.setFillColor(exitButton.getGlobalBounds().contains(mousePosF) ? sf::Color(150, 150, 150) : sf::Color(100, 100, 100));
     }
     else if (currentState == GameState::PLAY) {
-
-        // Aktualizacja timera
         currentSurvivalTime += deltaTime;
         timerText.setString(std::to_string(static_cast<int>(currentSurvivalTime)) + "s");
         sf::FloatRect timerRect = timerText.getLocalBounds();
         timerText.setOrigin(timerRect.left + timerRect.width / 2.0f, timerRect.top + timerRect.height / 2.0f);
         timerText.setPosition(1378.f / 2.0f, 50.f);
 
-        // Zombie spawner
         spawnTimer += deltaTime;
         if (spawnTimer >= nextSpawnTime) {
             spawnTimer = 0.f;
-
             nextSpawnTime = 1.5f + static_cast<float>(std::rand()) / (static_cast<float>(RAND_MAX / 3.0f));
 
-            // Losowanie strony
             float spawnX = (std::rand() % 2 == 0) ? -100.f : 1450.f;
             float spawnY = 600.f;
-            // 60% - Zwyk³y, 30% - Szybki, 10% - Tank
             int chance = std::rand() % 100;
 
             if (chance < 60) {
@@ -219,9 +238,11 @@ void Game::update(float deltaTime) {
                 gameObjects.push_back(std::make_unique<TankZombiee>(spawnX, spawnY));
             }
         }
+
         for (auto& obj : gameObjects) {
             obj->update(deltaTime);
         }
+
         Player* playerPtr = nullptr;
         for (auto& obj : gameObjects) {
             if (auto p = dynamic_cast<Player*>(obj.get())) {
@@ -230,16 +251,20 @@ void Game::update(float deltaTime) {
             }
         }
 
+        if (playerPtr) {
+            hpText.setString("HP: " + std::to_string(playerPtr->getHP()));
+        }
+
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-        sf::Vector2f mousePosF(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y));
+        sf::Vector2f mousePosF = window.mapPixelToCoords(mousePos);
 
         for (auto& obj : gameObjects) {
             if (auto player = dynamic_cast<Player*>(obj.get())) {
                 player->aim(mousePosF);
             }
             else if (auto zombie = dynamic_cast<Zombie*>(obj.get())) {
-                    zombie->moveTowards(playerPtr->getCenter().x);
-                    //w strone gracza
+                if (playerPtr) {
+                    zombie->moveTowards(playerPtr->getCenter());
                 }
             }
         }
@@ -266,17 +291,32 @@ void Game::update(float deltaTime) {
                     }
                 }
             }
-        }
+            else if (auto bullet = dynamic_cast<Bullet*>(obj1.get())) {
+                if (bullet->isMarkedForDeletion()) continue;
 
-        // Pocisk i Zombie
-        Player* playerPtr = nullptr;
-        for (auto& obj : gameObjects) {
-            if (auto p = dynamic_cast<Player*>(obj.get())) {
-                playerPtr = p;
-                break;
+                for (auto& obj2 : gameObjects) {
+                    if (auto platform = dynamic_cast<Platform*>(obj2.get())) {
+                        if (bullet->getBounds().intersects(platform->getBounds())) {
+                            bullet->markForDeletion();
+                            break;
+                        }
+                    }
+                }
             }
         }
 
+        for (auto& obj : gameObjects) {
+            if (auto player = dynamic_cast<Player*>(obj.get())) {
+                player->aim(mousePosF);
+            }
+            else if (auto zombie = dynamic_cast<Zombie*>(obj.get())) {
+                if (playerPtr) {
+                    zombie->moveTowards(playerPtr->getCenter());
+                }
+            }
+        }
+
+        // Pocisk i Zombie
         for (auto& obj1 : gameObjects) {
             if (auto bullet = dynamic_cast<Bullet*>(obj1.get())) {
                 if (bullet->isMarkedForDeletion()) continue;
@@ -286,34 +326,44 @@ void Game::update(float deltaTime) {
                         if (zombie->isMarkedForDeletion()) continue;
                         if (bullet->getBounds().intersects(zombie->getBounds())) {
                             zombie->takeDamage(bullet->getDamage());
-                            if(zombie->isMarkedForDeletion()){
+                            if (zombie->isMarkedForDeletion()) {
+                                deadSound.play();
                                 zombieKills++;
-                                if(zombieKills % 10 == 0){
-                                    playerPtr->addSpecialAmmo(5);
+                                if (zombieKills % 10 == 0) {
+                                    if (playerPtr) playerPtr->addSpecialAmmo(5);
+                                }
+                                if (zombieKills % 20 == 0) {
+                                    if (playerPtr) playerPtr->heal(5);
                                 }
                             }
 
-                            bullet->markForDeletion(); 
-                            break; 
+                            bullet->markForDeletion();
+                            break;
                         }
                     }
                 }
             }
         }
+
+        if (playerPtr && playerPtr->getHP() <= 0) {
+            currentState = GameState::GAMEOVER;
+            checkAndSaveScore();
+        }
+
         gameObjects.erase(
             std::remove_if(gameObjects.begin(), gameObjects.end(),
                 [](const std::unique_ptr<GameObject>& obj) { return obj->isMarkedForDeletion(); }),
             gameObjects.end()
         );
     }
+}
 
 void Game::render() {
     window.clear(sf::Color(40, 45, 50));
     window.draw(background);
 
     if (currentState == GameState::MENU) {
-        window.draw(bestScoreText); 
-
+        window.draw(bestScoreText);
 
         window.draw(playButton);
         window.draw(playText);
@@ -323,12 +373,19 @@ void Game::render() {
         window.draw(exitText);
     }
     else if (currentState == GameState::PLAY) {
-
         for (auto& obj : gameObjects) {
             obj->draw(window);
         }
-        window.draw(gameText);  
-        window.draw(timerText); 
+        window.draw(gameText);
+        window.draw(timerText);
+        window.draw(hpText);
+    }
+    else if (currentState == GameState::GAMEOVER) {
+        for (auto& obj : gameObjects) {
+            obj->draw(window);
+        }
+        window.draw(gameOverText);
+        window.draw(restartText);
     }
     else if (currentState == GameState::AUTHORS) {
         window.draw(authorsInfo);
@@ -344,25 +401,25 @@ void Game::loadBestScore() {
         file.close();
     }
     else {
-        bestSurvivalTime = 0.f; 
+        bestSurvivalTime = 0.f;
     }
 }
 
-    void Game::saveBestScore() {
-        std::ofstream file("best_score.txt");
-        if (file.is_open()) {
-            file << bestSurvivalTime;
-            file.close();
-        }
+void Game::saveBestScore() {
+    std::ofstream file("best_score.txt");
+    if (file.is_open()) {
+        file << bestSurvivalTime;
+        file.close();
     }
+}
 
-    void Game::checkAndSaveScore() {
-        if (currentSurvivalTime > bestSurvivalTime) {
-            bestSurvivalTime = currentSurvivalTime;
-            saveBestScore();
-            bestScoreText.setString("Najlepszy czas: " + std::to_string(static_cast<int>(bestSurvivalTime)) + "s");
-            sf::FloatRect bsRect = bestScoreText.getLocalBounds();
-            bestScoreText.setOrigin(bsRect.left + bsRect.width / 2.0f, bsRect.top + bsRect.height / 2.0f);
-            bestScoreText.setPosition(1378.f / 2.0f, 650.f);
-        }
+void Game::checkAndSaveScore() {
+    if (currentSurvivalTime > bestSurvivalTime) {
+        bestSurvivalTime = currentSurvivalTime;
+        saveBestScore();
+        bestScoreText.setString("Najlepszy czas: " + std::to_string(static_cast<int>(bestSurvivalTime)) + "s");
+        sf::FloatRect bsRect = bestScoreText.getLocalBounds();
+        bestScoreText.setOrigin(bsRect.left + bsRect.width / 2.0f, bsRect.top + bsRect.height / 2.0f);
+        bestScoreText.setPosition(1378.f / 2.0f, 650.f);
     }
+}

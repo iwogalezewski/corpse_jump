@@ -14,11 +14,14 @@ private:
 
     sf::RectangleShape gun;
 
+    int hp;
+    float invincibilityTimer;
+
 public:
     Player(float startX, float startY);
 
     void update(float deltaTime) override;
-    void draw(sf::RenderWindow& window) override; 
+    void draw(sf::RenderWindow& window) override;
     void setGrounded(bool state);
     void resolveCollision(const sf::FloatRect& platformBounds);
     void addSpecialAmmo(int amount) { specialAmmo += amount; }
@@ -28,6 +31,10 @@ public:
             specialAmmo--;
     }
 
-    void aim(sf::Vector2f mousePos); 
-    sf::Vector2f getCenter() const; 
+    void aim(sf::Vector2f mousePos);
+    sf::Vector2f getCenter() const;
+
+    int getHP() const { return hp; }
+    void takeDamage(int dmg);
+    void heal(int amount);
 };
